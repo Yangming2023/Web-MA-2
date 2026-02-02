@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Town Building Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            border: 1px solid #333;
+            font-weight: bold;
+        }
+        .grass { background-color: #9be39b; }
+        .forest { background-color: #2f7d32; color: white; }
+        .house { background-color: #ffcc80; }
+        .mine { background-color: #b0bec5; }
+    </style>
+</head>
+<body>
+
+<h1>Town Building Game</h1>
+
+<p>Click <a href="data.html">here</a> to see the data</p>
+
+<p>Money: <span id="money">20</span></p>
+<p>Houses: <span id="houses">1</span> | Mines: <span id="mines">1</span></p>
+
+<select id="buildType">
+    <option value="house">Build House (10)</option>
+    <option value="mine">Build Mine (10)</option>
+    <option value="chop">Chop Forest (5)</option>
+</select>
+
+<input type="text" id="coord" placeholder="A1, B2, C5">
+<button onclick="doAction()">Confirm</button>
+<button onclick="endTurn()">End Turn</button>
+
+<table>
+    <tbody id="grid"></tbody>
+</table>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const darkMode = urlParams.get("dark");
+    const font = urlParams.get("font");
+    const bg = urlParams.get("bg");
+
+    if (darkMode === "true") {
+        document.body.style.backgroundColor = "#222";
+        document.body.style.color = "white";
+        // document.getElementById("theme-display").innerText = "Your preferred mode is dark";
+    }
+
+    // if (bg) {
+    //     document.body.style.backgroundColor = bg;
+    //     document.getElementById("theme-display").innerText =
+    //         "Your preferred background is " + bg;
+    // }
+
+    if (font) {
+        document.body.style.fontFamily = font;
+    }
+
+    const GRIDSIZE = 10;
+
+    let money = 20;
+    let houses = 1;
+    let mines = 1;
+
+    // Tile types: grass, forest, house, mine
+    let grid = [];
+
+    function initGrid() {
+        for (let i = 0; i < GRIDSIZE; i++) {
+            let row = [];
+            for (let j = 0; j < GRIDSIZE; j++) {
+                row.push("forest");
+            }
+            grid.push(row);
+        }
+
+        grid[0][0] = "house";
+        grid[0][1] = "mine";
+    }
+
+    function renderGrid() {
+        const table = document.getElementById("grid");
+        table.innerHTML = "";
+
+        for (let i = 0; i < GRIDSIZE; i++) {
+            let tr = document.createElement("tr");
+
+            for (let j = 0; j < GRIDSIZE; j++) {
+                let td = document.createElement("td");
+                td.className = grid[i][j];
+
+                if (grid[i][j] === "house") {
+                    td.textContent = "H";
+                }
+                if (grid[i][j] === "mine") {
+                    td.textContent = "M";
+                }
+                if (grid[i][j] === "forest") {
+                    td.textContent = "F";
+                }
+
+                tr.appendChild(td);
+            }
+            table.appendChild(tr);
+        }
+
+        document.getElementById("money").textContent = money;
+        document.getElementById("houses").textContent = houses;
+        document.getElementById("mines").textContent = mines;
+    }
+
+    function parseCoord(coord) {
+        coord = coord.toUpperCase();
+        const row = coord.charCodeAt(0) - 65;
+        const col = parseInt(coord.slice(1)) - 1;
+
+        if (row < 0 || row >= GRIDSIZE || col < 0 || col >= GRIDSIZE) {
+            return null;
+        }
+        return { row, col };
+    }
+
+    function doAction() {
+        const type = document.getElementById("buildType").value;
+        const coord = document.getElementById("coord").value;
+        const pos = parseCoord(coord);
+
+        if (!pos) {
+            alert("Invalid coordinate!");
+            return;
+        }
+
+        const tile = grid[pos.row][pos.col];
+
+        if (type === "chop") {
+            if (money < 5) return alert("not enough money");
+            money -= 5;
+            if (tile === "forest") {
+                grid[pos.row][pos.col] = "grass";
+            } else {
+                alert("That tile is not forest.");
+            }
+        }
+
+        if (type === "house") {
+            if (money < 10) return alert("Not enough money!");
+            if (tile !== "grass") return alert("You can only build on grass.");
+
+            grid[pos.row][pos.col] = "house";
+            money -= 10;
+            houses++;
+        }
+
+        if (type === "mine") {
+            if (money < 10) return alert("Not enough money!");
+            if (tile !== "grass") return alert("You can only build on grass.");
+            if (mines >= houses) return alert("You need more houses to build more mines.");
+
+            grid[pos.row][pos.col] = "mine";
+            money -= 10;
+            mines++;
+        }
+
+        renderGrid();
+    }
+
+    function endTurn() {
+        money += mines * 10;
+        alert("Turn ended! You earned " + (mines * 10) + " money.");
+        renderGrid();
+    }
+
+    initGrid();
+    renderGrid();
+</script>
+
+</body>
+</html>
